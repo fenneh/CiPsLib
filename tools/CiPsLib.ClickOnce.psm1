@@ -9,9 +9,8 @@ function UpdateSetupExeUrl {
     if ($Verbose) {
         $VerbosePreference = 'Continue'
     }
-	Write-Verbose "Updating '$SetupExePath' to URL '$Url'"
-	& $SetupExePath /url=$Url | Write-Verbose
-	CheckError "Failed to update '$SetupExePath' URL to $Url"
+	Write-Verbose "UpdateSetupExeUrl: Updating '$SetupExePath' to URL '$Url'"
+	Call { & $SetupExePath "/url=$Url" | Write-Verbose } "Configuring '$SetupExePath' failed"	
 }
 
 function ResignClickOnceApplication {
@@ -21,7 +20,7 @@ function ResignClickOnceApplication {
 		[string] $ManifestFilePath,
 		[string] $ApplicationFilePath,
 		[string] $CertificateFilePath,
-		[string] $CertificateFilePassword,
+		[string] $CertificateFilePassword = "",
 		[string] $TempDirectory,
 		[switch] $Verbose
 	)
@@ -32,11 +31,19 @@ function ResignClickOnceApplication {
 	$MageExePath = 'C:\Program Files (x86)\Microsoft SDKs\Windows\v8.0A\bin\NETFX 4.0 Tools\mage.exe'
 	& $MageExePath -Update $ManifestFilePath -FromDirectory $TempDirectory | Write-Verbose
 	CheckError "Failed to update $ManifestFilePath"
-	& $MageExePath -Sign $ManifestFilePath -CertFile $CertificateFilePath -Password $CertificateFilePassword | Write-Verbose
+	if ($CertificateFilePassword -eq "") {
+		& $MageExePath -Sign $ManifestFilePath -CertFile $CertificateFilePath | Write-Verbose
+	} else {
+		& $MageExePath -Sign $ManifestFilePath -CertFile $CertificateFilePath -Password $CertificateFilePassword | Write-Verbose
+	}
 	CheckError "Failed to sign $ManifestFilePath"
 	& $MageExePath -Update $ApplicationFilePath -AppManifest $ManifestFilePath | Write-Verbose
 	CheckError "Failed to update $ApplicationFilePath"
-	& $MageExePath -Sign $ApplicationFilePath -CertFile $CertificateFilePath -Password $CertificateFilePassword | Write-Verbose
+	if ($CertificateFilePassword -eq "") {
+		& $MageExePath -Sign $ApplicationFilePath -CertFile $CertificateFilePath | Write-Verbose
+	} else {
+		& $MageExePath -Sign $ApplicationFilePath -CertFile $CertificateFilePath -Password $CertificateFilePassword | Write-Verbose
+	}
 	CheckError "Failed to sign $ApplicationFilePath"
 }
 

@@ -1,13 +1,11 @@
-﻿#--------------------------------------------------------------------------
-# Function Library
-# http://technet.microsoft.com/en-us/library/ee790599.aspx
-#--------------------------------------------------------------------------
-
-if (Get-Command "ServerManager" -errorAction SilentlyContinue) {
+﻿if (Get-Command "ServerManager" -ErrorAction SilentlyContinue) {
 	Import-Module ServerManager
 }
 
-Import-Module WebAdministration
+if (Get-Command "WebAdministration" -ErrorAction SilentlyContinue) {
+	# http://technet.microsoft.com/en-us/library/ee790599.aspx
+	Import-Module WebAdministration
+}
 
 function EnsureWebFeaturesAreInstalled {
 	param
@@ -255,20 +253,33 @@ function Add-SslBinding {
 }
 
 #http://suhinini.blogspot.dk/2010/02/using-xmlpeek-and-xmlpoke-in-powershell.html	
-function xmlPeek($filePath, $xpath) { 
+function XmlPeek($filePath, $xpath) { 
     [xml] $fileXml = Get-Content $filePath 
     return $fileXml.SelectSingleNode($xpath).Value 
 } 
 
-function xmlPoke($file, $xpath, $value) { 
-    [xml] $fileXml = Get-Content $file 
-    $node = $fileXml.SelectSingleNode($xpath) 
-    if ($node) 	{
-		Write-Host "xmlPoke info: Changing '$xpath' to '$value'"
-        $node.InnerText = $value 
-        $fileXml.Save($file)  
-    } else {
-        throw "xmlPoke error: Not able to find $xpath and replace with $value"
+function XmlPoke {
+	param
+	(
+		[string] $FilePath,
+		[string] $XPath,
+		[string] $Value,
+		[switch] $Verbose
+	)
+    if ($Verbose) {
+        $VerbosePreference = 'Continue'
+    }
+    [xml] $xml = Get-Content $FilePath
+	$FoundNode = $false
+    $xml.SelectNodes($XPath) | ForEach-Object {
+		Write-Verbose "XmlPoke: Changing '$XPath' to '$Value'"
+        $_.InnerText = $Value
+		$FoundNode = $true
+	}
+	if ($FoundNode -eq $true) {
+    	$xml.Save($FilePath)
+	} else {
+		throw "XmlPoke ERROR: Failed to find any nodes with XPath '$XPath'"
 	}
 }
 
@@ -313,21 +324,34 @@ function Register-ServiceModelWithIis {
 	CheckError "Register WCF and WF components with IIS FAILED!"
 }
 
+function Call {
+	param
+	(
+		[scriptblock] $Command,
+		[string] $Message
+	)
+	& $Command
+	if ($lastExitCode -ne 0) {
+        throw "$message"
+    }
+}
+
 function CheckSetVarDefault {
 	param
 	(
-		[Parameter(Position=0, Mandatory=$true)]
-		[string]$variableName,
-		[Parameter(Position=1, Mandatory=$false)]
-		[string]$defaultValue = ""
+		[string] $Name,
+		[string] $Default = "",
+		[switch] $Verbose
 	)
-	
-	$variable = Get-Variable -Scope Global -Name $variableName -ErrorAction SilentlyContinue
+    if ($Verbose) {
+        $VerbosePreference = 'Continue'
+    }
+	$variable = Get-Variable -Scope Global -Name $Name -ErrorAction SilentlyContinue
 	if ($variable -eq $null) {
-		Set-Variable -Scope Global -Name $variableName -Value $defaultValue
+		Write-Verbose "CheckSetVarDefault: Variable '$Name' not set, setting to '$Default'"
+		Set-Variable -Scope Global -Name $Name -Value $Default
 	}
 }
-
 
 function CheckError {
 	param (
