@@ -1,0 +1,17 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<package xmlns="http://schemas.microsoft.com/packaging/2010/07/nuspec.xsd">
+    <metadata>
+        <id>CiPsLib</id>
+        <version>0.0.0.1</version>
+        <title>Continuous integration Powershell library</title>
+        <authors>Rasmus Mikkelsen (r@smus.nu)</authors>
+        <owners>rasmus</owners>
+        <licenseUrl>http://opensource.org/licenses/MIT</licenseUrl>
+        <requireLicenseAcceptance>true</requireLicenseAcceptance>
+        <description>Continuous integration Powershell library specifically tarted Octopus deployment.</description>
+        <language>en-US</language>
+    </metadata>
+    <files>
+        <file src="tools\**\*.*" target="tools\" />
+    </files>
+</package>
