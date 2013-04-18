@@ -1,4 +1,12 @@
 ﻿
+function IsModuleAvailable {
+	param
+	(
+		[string] $Name
+	)
+	return Get-Module -ListAvailable | Where-Object { $_.name -eq $Name }
+}
+
 # http://poshcode.org/1937
 # Examples:
 #  Import-Certificate -CertFile “VeriSign_Expires-2028.08.01.cer” -StoreNames AuthRoot, Root -LocalMachine

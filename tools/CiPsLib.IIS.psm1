@@ -1,8 +1,8 @@
-﻿if (Get-Command "ServerManager" -ErrorAction SilentlyContinue) {
+﻿if (IsModuleAvailable -Name "ServerManager") {
 	Import-Module ServerManager
 }
 
-if (Get-Command "WebAdministration" -ErrorAction SilentlyContinue) {
+if (IsModuleAvailable -Name "WebAdministration") {
 	# http://technet.microsoft.com/en-us/library/ee790599.aspx
 	Import-Module WebAdministration
 }
