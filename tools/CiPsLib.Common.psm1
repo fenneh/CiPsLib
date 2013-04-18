@@ -163,7 +163,7 @@ function XmlPeek {
 		[string] $FilePath,
 		[string] $XPath
 	)
-    [xml] $xml = Get-Content $FilePath 
+    [xml] $xml = Get-Content $FilePath -Encoding UTF8
     return $xml.SelectSingleNode($XPath).Value 
 } 
 
@@ -178,7 +178,7 @@ function XmlPoke {
     if ($Verbose) {
         $VerbosePreference = 'Continue'
     }
-    [xml] $xml = Get-Content $FilePath
+    [xml] $xml = Get-Content $FilePath -Encoding UTF8
 	$FoundNode = $false
     $xml.SelectNodes($XPath) | ForEach-Object {
 		Write-Verbose "XmlPoke: Changing '$XPath' to '$Value'"
@@ -202,7 +202,7 @@ function XmlRemoveNode {
     if ($Verbose) {
         $VerbosePreference = 'Continue'
     }
-	[xml] $xml = Get-Content $XmlFilePath
+	[xml] $xml = Get-Content $XmlFilePath -Encoding UTF8
 	$xml.SelectNodes($XPath) | ForEach-Object {
 		Write-Verbose "Removing node with path $XPath"
 		$_.ParentNode.RemoveChild($_)
