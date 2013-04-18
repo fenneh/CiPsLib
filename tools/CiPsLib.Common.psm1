@@ -1,26 +1,4 @@
-﻿if (Get-Command "ServerManager" -ErrorAction SilentlyContinue) {
-	Import-Module ServerManager
-}
-
-if (Get-Command "WebAdministration" -ErrorAction SilentlyContinue) {
-	# http://technet.microsoft.com/en-us/library/ee790599.aspx
-	Import-Module WebAdministration
-}
-
-function EnsureWebFeaturesAreInstalled {
-	param
-	(
-		[switch] $Verbose
-	)
-    if ($Verbose) {
-        $VerbosePreference = 'Continue'
-    }
-	Write-Verbose "Adding web-server and net-framework Windows features"
-	if (Get-Command "Add-WindowsFeature" -ErrorAction SilentlyContinue) {
-		Add-WindowsFeature web-server,net-framework | Write-Host
-	}
-}
-
+﻿
 # http://poshcode.org/1937
 # Examples:
 #  Import-Certificate -CertFile “VeriSign_Expires-2028.08.01.cer” -StoreNames AuthRoot, Root -LocalMachine
@@ -101,113 +79,43 @@ function Import-Certificate
 	{ }
 }
 
-function Add-AppPool {
+function Grant-CertificateReadPermission {
 	param
 	(
-		[Parameter(Position=0, Mandatory=$true)] 
-		[string]$appPoolName, 
-		[Parameter(Position=1, Mandatory=$true)] 
-		[string]$appPoolFrameworkVersion, 
-		[Parameter(Position=2, Mandatory=$true)] 
-		[string]$appPoolIdentity,
-		[Parameter(Position=3, Mandatory=$false)] 
-		[string]$appPoolIdentityPassword
+		[string] $ThumbPrint,
+		[string] $Username,
+		[switch] $Verbose
 	)
-	
-	write-host "Configuring app pool $appPoolName, with framework v$appPoolFrameworkVersion and user $appPoolIdentity"
-	cd IIS:\
-	$appPoolPath = ("IIS:\AppPools\" + $appPoolName)
-	$pool = Get-Item $appPoolPath -ErrorAction SilentlyContinue
-	
-	if ($pool) {
-		write-host "Deleting existing appPool: $appPoolPath"
-		Remove-Item $appPoolPath -Force -Recurse
-	}
-	
-	if (!(Test-Path $appPoolPath)) { 
-		Write-Host "App pool $appPoolName does not exist. Creating..." 
-		$newAppPool = New-Item $appPoolPath
-		$newAppPool.processModel.idleTimeout = [TimeSpan] "0.00:00:00"
-		$newAppPool.managedRuntimeVersion = $appPoolFrameworkVersion
-	    $newAppPool.recycling.periodicRestart.time = [TimeSpan] "00:00:00"
-				
-		if ($appPoolIdentityPassword) {
-			Write-Host "Setting up App Pool with specific user $appPoolIdentity"
-			$newAppPool.processModel.userName = $appPoolIdentity
-			$newAppPool.processModel.password = $appPoolIdentityPassword
-			$newAppPool.processModel.identityType = "SpecificUser"
-		} else {
-			$newAppPool.processModel.identityType = $appPoolIdentity
-		}
-	
-		$newAppPool | Set-Item  	
-	} else {
-		Write-Host "App pool $appPoolName already exists."
-	}
-	
-	cd c:
+    if ($Verbose) {
+        $VerbosePreference = 'Continue'
+    }
+	Write-Verbose "Granting certificate '$ThumbPrint' read permission to '$Username'"
+	$certificateKeyRoot = "C:\ProgramData\Microsoft\Crypto\RSA\MachineKeys"
+	$cert = Get-Item "cert:\LocalMachine\My\$ThumbPrint"
+	Write-Verbose "Certificate"
+	Write-Verbose $cert
+	$certUniqueKeyContainerName = $cert.PrivateKey.CspKeyContainerInfo.UniqueKeyContainerName
+	$certificateKeyPath = "$certificateKeyRoot"+"\"+$certUniqueKeyContainerName
+	Write-Verbose "Certificate key path: $certificateKeyPath"
+	SetFilePermission $certificateKeyPath "Read" $Username
 }
-
-function Add-Website {
+function Set-FullControlDirectoryFilePermission {
 	param
 	(
-		[Parameter(Position=0, Mandatory=$true)] 
-		[string]$siteName, 
-		[Parameter(Position=1, Mandatory=$true)] 
-		[string]$appPoolName, 
-		[Parameter(Position=2, Mandatory=$true)] 
-		[string]$webRoot,
-		[Parameter(Position=3, Mandatory=$true)] 
-		[string]$hostHeader
+		[string] $Path,
+		[string] $Usermname,
+		[switch] $Verbose
 	)
-	
-	# Delete exiting website
-	$sitePath = ("IIS:\Sites\" + $siteName)
-	$site = Get-Item $sitePath -ErrorAction SilentlyContinue 
-	if ($site) { 
-		Remove-WebSite -Name $siteName
-	}
-	
-	Write-Host "Checking site $siteName..."
-	$site = Get-Item $sitePath -ErrorAction SilentlyContinue
-	
-	if (!$site) { 
-		Write-Host "Site $siteName does not exist, creating..." 
-		$siteBindings = ":80:" + $hostHeader   
-		$id = (dir iis:\sites | foreach {$_.id} | sort -Descending | select -first 1) + 1
-		New-Item $sitePath -bindings @{protocol="http";bindingInformation=$siteBindings} -id $id -physicalPath $webRoot
-		# Write-Host "Set bindings..."
-		#Set-ItemProperty $sitePath -name bindings -value @{protocol="http";bindingInformation=$siteBindings}
-		# Write-Host "Set app pool..."
-		Set-ItemProperty $sitePath -Name applicationPool -Value $appPoolName
-	} else {
-		throw "Site '$sitePath' exists, but it should not!"
-	}
-}	
-
-function Add-WebApplication {
-	param
-	(
-		[Parameter(Position=0, Mandatory=$true)]
-		[string]$siteName,
-		[Parameter(Position=1, Mandatory=$true)]
-		[string]$applicationName,
-		[Parameter(Position=2, Mandatory=$true)]
-		[string]$webRoot,
-		[Parameter(Position=3, Mandatory=$true)]
-		[string]$appPoolName
-	)
-	
-	Write-Host "Checking application $siteName\$applicationName..."
-	$sitePath = ("IIS:\Sites\" + $siteName + "\" + $applicationName)
-	$site = Get-Item $sitePath -ErrorAction SilentlyContinue
-	if (!$site) {
-		Write-Host "Application $siteName\$applicationName does not exist, creating..." 
-		New-WebApplication -Site $siteName -Name $applicationName -PhysicalPath $webRoot -ApplicationPool $appPoolName > $null
-		Set-ItemProperty $sitePath -name applicationPool -value $appPoolName
-	} else {
-		Write-Host "Application exists. Complete"
-	}
+    if ($Verbose) {
+        $VerbosePreference = 'Continue'
+    }
+	Write-Verbose "Setting FullControll for user $Usermname to path: $Path"
+	$acl = Get-Acl $Path
+	$permission = $Usermname,"FullControl","Allow"
+	$accessRule = New-Object System.Security.AccessControl.FileSystemAccessRule($Usermname,"FullControl", "ContainerInherit, ObjectInherit", "None", "Allow")
+	$acl.AddAccessRule($accessRule)
+	Set-Acl $Path $acl
+	Get-Acl $Path | Format-List | Write-Verbose
 }
 
 function CreateAndAddTestCertificate {
@@ -219,43 +127,36 @@ function CreateAndAddTestCertificate {
 	Invoke-Expression -command 'makecert -r -pe -n $certificateName -b 07/01/2008 -e 07/01/2099 -eku 1.3.6.1.5.5.7.3.1 -ss my -sr localMachine -sky exchange -sp "Microsoft RSA SChannel Cryptographic Provider" -sy 12'
 }
 
-# Get-ChildItem -Recurse cert:\ | more
-function Add-SslBinding {
+function SetFilePermission {
 	param
 	(
-		[Parameter(Position=0, Mandatory=$true)]
-		[string]$siteName,
-		[Parameter(Position=1, Mandatory=$true)]
-		[string]$sslThumbPrint,
-		[Parameter(Position=2, Mandatory=$true)]
-		[string]$hostheader,
-		[Parameter(Position=3, Mandatory=$true)]
-		[string]$certificateStore
+		[string] $FilePath,
+		[string] $Permission,
+		[string] $Username,
+		[switch] $Verbose
 	)
-	
-	cd IIS:
-	$binding = Get-WebBinding -Name $siteName -Port 443
-	
-	if ($binding) {
-		Write-Host "Binding exists - removing existing"
-	    $binding | Remove-WebBinding
-	}
-	
-	New-WebBinding -Name $siteName -IP "*" -Port 443 -Protocol https
-	$cert = Get-Item "cert:\LocalMachine\$certificateStore\$sslThumbPrint"
-	Write-Host "Certificate"
-	Write-Host "$cert"
-	cd IIS:\SslBindings
-	Remove-Item .\0.0.0.0!443 -ErrorAction SilentlyContinue
-	$cert | New-Item 0.0.0.0!443
-	dir
-	cd C:
+    if ($Verbose) {
+        $VerbosePreference = 'Continue'
+    }
+	Write-Verbose "SetFilePermission: Setting '$Permission' permission for $username on $FilePath"
+	$Acl = Get-Acl $FilePath
+	Write-Verbose Permissions before:
+	$Acl| Format-List | Write-Verbose
+	$Ar = New-Object  system.security.accesscontrol.filesystemaccessrule($Username,$Permission,"Allow")
+	$Acl.SetAccessRule($Ar)
+	Set-Acl $fullPath $Acl
+	Write-Verbose 'Permissions after:'
+	$Acl| Format-List | Write-Verbose
 }
 
-#http://suhinini.blogspot.dk/2010/02/using-xmlpeek-and-xmlpoke-in-powershell.html	
-function XmlPeek($filePath, $xpath) { 
-    [xml] $fileXml = Get-Content $filePath 
-    return $fileXml.SelectSingleNode($xpath).Value 
+function XmlPeek {
+	param
+	(
+		[string] $FilePath,
+		[string] $XPath
+	)
+    [xml] $xml = Get-Content $FilePath 
+    return $xml.SelectSingleNode($XPath).Value 
 } 
 
 function XmlPoke {
@@ -287,41 +188,27 @@ function XmlRemoveNode {
 	param
 	(
 		[string] $XmlFilePath,
-		[string] $XPath
+		[string] $XPath,
+		[switch] $Verbose
 	)
+    if ($Verbose) {
+        $VerbosePreference = 'Continue'
+    }
 	[xml] $xml = Get-Content $XmlFilePath
 	$xml.SelectNodes($XPath) | ForEach-Object {
-		Write-Host "Removing node with path $XPath"
+		Write-Verbose "Removing node with path $XPath"
 		$_.ParentNode.RemoveChild($_)
 	}
 	$xml.Save($XmlFilePath)
 }
 
-function Register-AspNetWithIis {
-	param
+function Get-AssemblyVersion {
+    param
 	(
-		[switch] $Verbose
+		$file
 	)
-    if ($Verbose) {
-        $VerbosePreference = 'Continue'
-    }
-	Write-Verbose "Register ASP.NET 4 with IIS"	
-    & "$env:windir\Microsoft.NET\Framework\v4.0.30319\aspnet_regiis.exe" -i | Write-Host
-	CheckError "Register ASP.NET 4 with IIS FAILED!"
-}
-
-
-function Register-ServiceModelWithIis {
-	param
-	(
-		[switch] $Verbose
-	)
-    if ($Verbose) {
-        $VerbosePreference = 'Continue'
-    }
-	Write-Verbose "Register WCF and WF components with IIS"
-	& "$env:windir\Microsoft.NET\Framework\v4.0.30319\ServiceModelReg" -ia | Write-Host
-	CheckError "Register WCF and WF components with IIS FAILED!"
+	
+    return [System.Diagnostics.FileVersionInfo]::GetVersionInfo($file).FileVersion
 }
 
 function Call {
@@ -365,4 +252,4 @@ function CheckError {
 
 Export-ModuleMember -function * -alias *
 
-Write-Host 'Imported CsPsLib.Common.PsLib.psm1'
+Write-Host 'Imported CsPsLib.Common.psm1'
