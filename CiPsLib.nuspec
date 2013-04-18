@@ -1,5 +1,5 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
-<package xmlns="http://schemas.microsoft.com/packaging/2010/07/nuspec.xsd">
+<package xmlns="http://schemas.microsoft.com/packaging/2011/08/nuspec.xsd">
     <metadata>
         <id>CiPsLib</id>
         <version>0.0.0.1</version>
@@ -9,7 +9,8 @@
         <licenseUrl>http://opensource.org/licenses/MIT</licenseUrl>
         <projectUrl>https://github.com/rasmus/CiPsLib</projectUrl>
         <requireLicenseAcceptance>true</requireLicenseAcceptance>
-        <description>Continuous integration Powershell library specifically tarted Octopus deployment.</description>
+        <description>Continuous integration Powershell library specifically targeted Octopus deployment.</description>
+        <releaseNotes></releaseNotes>
         <language>en-US</language>
     </metadata>
     <files>
