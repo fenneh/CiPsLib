@@ -4,7 +4,7 @@
         <id>CiPsLib</id>
         <version>0.0.0.1</version>
         <title>Continuous integration Powershell library</title>
-        <authors>Rasmus Mikkelsen (r@smus.nu)</authors>
+        <authors>Rasmus Mikkelsen</authors>
         <owners>rasmus</owners>
         <licenseUrl>http://opensource.org/licenses/MIT</licenseUrl>
         <projectUrl>https://github.com/rasmus/CiPsLib</projectUrl>
