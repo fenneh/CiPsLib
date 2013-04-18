@@ -223,11 +223,15 @@ function Call {
 	param
 	(
 		[scriptblock] $Command,
-		[string] $Message
+		[string] $ThrowMessage,
+		[switch] $Verbose
 	)
-	& $Command
+    if ($Verbose) {
+        $VerbosePreference = 'Continue'
+    }
+	& $Command | Write-Verbose
 	if ($lastExitCode -ne 0) {
-        throw "$message"
+        throw "$ThrowMessage"
     }
 }
 
