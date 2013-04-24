@@ -10,7 +10,7 @@ function UpdateSetupExeUrl {
         $VerbosePreference = 'Continue'
     }
 	Write-Verbose "UpdateSetupExeUrl: Updating '$SetupExePath' to URL '$Url'"
-	Call -Command { & $SetupExePath "/url=$Url" } -ThrowMessage "Configuring '$SetupExePath' failed" -Verbose
+	Call { & $SetupExePath "/url=$Url" | Write-Verbose } "Configuring '$SetupExePath' failed"
 }
 
 function ResignClickOnceApplication {
