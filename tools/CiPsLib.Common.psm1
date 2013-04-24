@@ -219,6 +219,43 @@ function Get-AssemblyVersion {
     return [System.Diagnostics.FileVersionInfo]::GetVersionInfo($file).FileVersion
 }
 
+function Update-AssemblyVersion {
+	param
+	(
+		[string] $FilePath,
+		[string] $Version,
+		[switch] $Verbose
+	)
+    if ($Verbose) {
+        $VerbosePreference = 'Continue'
+    }
+	$assemblyVersionPattern = 'AssemblyVersion\("[0-9]+(\.([0-9]+|\*)){1,3}"\)'
+    $fileVersionPattern = 'AssemblyFileVersion\("[0-9]+(\.([0-9]+|\*)){1,3}"\)'
+    $assemblyVersion = 'AssemblyVersion("' + $Version + '")';
+    $fileVersion = 'AssemblyFileVersion("' + $Version + '")';
+	Write-Verbose "Updating assembly version to '$Version' in file '$FilePath'"
+	(Get-Content $FilePath -Encoding UTF8) `
+		-replace $assemblyVersionPattern, $assemblyVersion `
+		-replace $fileVersionPattern,  $fileVersion `
+		| Set-Content $FilePath
+}
+
+function Update-AllAssemblyVersion {
+	param
+	(
+		[string] $RootPath,
+		[string] $Version,
+		[switch] $Verbose
+	)
+    if ($Verbose) {
+        $VerbosePreference = 'Continue'
+    }
+	Write-Verbose "Update ALL AssemblyInfo.cs files found in '$RootPath'!"
+	Get-ChildItem -Path $RootPath -Filter AssemblyInfo.cs -Recurse | ForEach-Object {
+		Update-AssemblyVersion -FilePath $_.FullName -Version $version -Verbose
+	}
+}
+
 function Call {
 	param
 	(
