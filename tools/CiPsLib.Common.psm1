@@ -252,6 +252,21 @@ function CheckSetVarDefault {
 	}
 }
 
+function CreateTempDir {
+	param
+	(
+		[switch] $Verbose
+	)
+    if ($Verbose) {
+        $VerbosePreference = 'Continue'
+    }
+	$tmpDir = [System.IO.Path]::GetTempPath()
+	$tmpDir = [System.IO.Path]::Combine($tmpDir, [System.IO.Path]::GetRandomFileName())
+	Write-Verbose "Creating temp directory at '$tmpDir'"
+	[System.IO.Directory]::CreateDirectory($tmpDir) | Out-Null
+	$tmpDir
+}
+
 function CheckError {
 	param (
 		[Parameter(Position=0, Mandatory=$true)]

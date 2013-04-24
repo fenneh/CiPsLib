@@ -10,7 +10,7 @@ function UpdateSetupExeUrl {
         $VerbosePreference = 'Continue'
     }
 	Write-Verbose "UpdateSetupExeUrl: Updating '$SetupExePath' to URL '$Url'"
-	Call { & $SetupExePath "/url=$Url" | Write-Verbose } "Configuring '$SetupExePath' failed"	
+	Call -Command { & $SetupExePath "/url=$Url" } -ThrowMessage "Configuring '$SetupExePath' failed" -Verbose
 }
 
 function ResignClickOnceApplication {
@@ -45,6 +45,34 @@ function ResignClickOnceApplication {
 		& $MageExePath -Sign $ApplicationFilePath -CertFile $CertificateFilePath -Password $CertificateFilePassword | Write-Verbose
 	}
 	CheckError "Failed to sign $ApplicationFilePath"
+}
+
+function SetClickOnceInformation {
+	param
+	(
+		[string] $ApplicationFilePath,
+		[string] $ProviderUrl = "",
+		[string] $SupportUrl = "",
+		[string] $Name = "",
+		[string] $Publisher = "",
+		[switch] $Verbose
+	)
+    if ($Verbose) {
+        $VerbosePreference = 'Continue'
+    }
+	if ($ProviderUrl -ne "") {
+		XmlPoke $ApplicationFilePath "//*[local-name() = 'deploymentProvider']/@codebase" $ProviderUrl -Verbose
+	}
+	if ($Name -ne "") {
+		XmlPoke $ApplicationFilePath "//*[local-name() = 'assemblyIdentity']/@name" $Name -Verbose
+		XmlPoke $ApplicationFilePath "//*[local-name() = 'description']/@*[namespace-uri()='urn:schemas-microsoft-com:asm.v2' and local-name() = 'product']" $Name -Verbose
+	}
+	if ($Publisher -ne "") {
+		XmlPoke $ApplicationFilePath "//*[local-name() = 'description']/@*[namespace-uri()='urn:schemas-microsoft-com:asm.v2' and local-name() = 'publisher']" $Publisher -Verbose
+	}
+	if ($SupportUrl -ne "") {
+		XmlPoke $ApplicationFilePath "//*[local-name() = 'description']/@*[namespace-uri()='urn:schemas-microsoft-com:asm.v2' and local-name() = 'supportUrl']" $SupportUrl -Verbose
+	}
 }
 
 function CopyAndStripFileName {
