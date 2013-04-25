@@ -1,9 +1,9 @@
 ﻿
 # https://gist.github.com/kfrancis/3164709
+# https://rpm.newrelic.com/accounts/289658/applications/1610344/deployments/instructions
 function SetNewRelicDeployment {
 	param
 	(
-		[string] $AccountId,
 		[string] $AppId,
 		[string] $ApiKey,
 		[string] $Username = "OctopusDeploy",
@@ -15,7 +15,7 @@ function SetNewRelicDeployment {
     }
 	Write-Verbose "SetNewRelicDeployment: Setting revision $Revision for new deployment for $AppId"
 	$URL = "http://api.newrelic.com/deployments.xml"
-	$post = "deployment[account_id]=$AccountId&deployment[user]=$Username&deployment[app_id]=$AppId&deployment[revision]=($Revision)"
+	$post = "deployment[user]=$Username&deployment[app_id]=$AppId&deployment[revision]=($Revision)"
 	$URI = New-Object System.Uri($URL,$true)
  
 	#Create a request object using the URI
