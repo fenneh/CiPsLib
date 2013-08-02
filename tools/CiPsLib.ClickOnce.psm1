@@ -55,8 +55,10 @@ function SetClickOnceInformation {
 		[string] $SupportUrl = "",
 		[string] $Name = "",
 		[string] $Publisher = "",
+		[string] $Processor = "",
 		[switch] $Verbose
 	)
+	$MageExePath = 'C:\Program Files (x86)\Microsoft SDKs\Windows\v8.0A\bin\NETFX 4.0 Tools\mage.exe'
     if ($Verbose) {
         $VerbosePreference = 'Continue'
     }
@@ -72,6 +74,9 @@ function SetClickOnceInformation {
 	}
 	if ($SupportUrl -ne "") {
 		XmlPoke $ApplicationFilePath "//*[local-name() = 'description']/@*[namespace-uri()='urn:schemas-microsoft-com:asm.v2' and local-name() = 'supportUrl']" $SupportUrl -Verbose
+	}
+	if ($Platform -ne "") {
+		& $MageExePath -Update $ApplicationFilePath -Processor $Platform
 	}
 }
 
