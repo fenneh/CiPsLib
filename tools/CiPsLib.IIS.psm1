@@ -1,12 +1,4 @@
-﻿if (IsModuleAvailable -Name "ServerManager") {
-	Import-Module ServerManager
-}
-
-if (IsModuleAvailable -Name "WebAdministration") {
-	# http://technet.microsoft.com/en-us/library/ee790599.aspx
-	Import-Module WebAdministration
-}
-
+﻿
 function EnsureWebFeaturesAreInstalled {
 	param
 	(
@@ -21,6 +13,23 @@ function EnsureWebFeaturesAreInstalled {
 	}
 }
 
+function Add-WebServerIISToolsFeature {
+	param
+	(
+		[switch] $Verbose
+	)
+    if ($Verbose) {
+        $VerbosePreference = 'Continue'
+    }
+	Write-Verbose "Adding Web Server (IIS) Tools feature"
+	if (Get-Command "Add-WindowsFeature" -ErrorAction SilentlyContinue) {
+		Add-WindowsFeature RSAT-Web-Server | Write-Host
+		
+	}
+
+}
+
+	
 function Add-Iis6MetaDataCompatibilityFeature {
 	param
 	(
@@ -32,6 +41,7 @@ function Add-Iis6MetaDataCompatibilityFeature {
 	Write-Verbose "Adding IIS 6 Meta Data Compatability feature"
 	if (Get-Command "Add-WindowsFeature" -ErrorAction SilentlyContinue) {
 		Add-WindowsFeature Web-Metabase
+		
 	}
 }
 
@@ -77,14 +87,14 @@ function Add-WebApplication {
 	Write-Verbose "Add-WebApplication: Checking application $SiteName\$ApplicationName"
 	$sitePath = ("IIS:\Sites\" + $SiteName + "\" + $ApplicationName)
 	$site = Get-Item $sitePath -ErrorAction SilentlyContinue
-	if (!$site) {
-		Write-Verbose "Add-WebApplication: Application $SiteName\$ApplicationName does not exist, creating" 
-		New-WebApplication -Site $SiteName -Name $ApplicationName -PhysicalPath $WebRoot -ApplicationPool $AppPoolName > $null
-		Set-ItemProperty $sitePath -name applicationPool -value $appPoolName
-	} else {
-		# TODO, delete first then recreate instead
-		Write-Warning "Add-WebApplication: Application exists, nothing to do"
+
+	if($site) {
+		Remove-WebSite -Name $SiteName
 	}
+
+	Write-Verbose "Add-WebApplication: Application $SiteName\$ApplicationName does not exist, creating" 
+	New-WebApplication -Site $SiteName -Name $ApplicationName -PhysicalPath $WebRoot -ApplicationPool $AppPoolName > $null
+	Set-ItemProperty $sitePath -name applicationPool -value $appPoolName
 }
 
 function Add-AppPool {
@@ -101,6 +111,7 @@ function Add-AppPool {
     }
 	
 	Write-Verbose "Add-AppPool: Configuring app pool $Name, with framework v$FrameworkVersion and user $Identity"
+	$curDir = get-location
 	cd IIS:\
 	$appPoolPath = ("IIS:\AppPools\" + $Name)
 	$pool = Get-Item $appPoolPath -ErrorAction SilentlyContinue
@@ -131,7 +142,7 @@ function Add-AppPool {
 		throw "Add-AppPool: App pool '$appPoolPath' still exist, but it should not!"
 	}
 	
-	cd c:
+	cd $curDir
 }
 
 function Add-Website {
@@ -186,6 +197,7 @@ function Add-SslBinding {
         $VerbosePreference = 'Continue'
     }
 	
+	$curDir = get-location
 	cd IIS:
 	$binding = Get-WebBinding -Name $SiteName -Port 443
 	
@@ -205,9 +217,32 @@ function Add-SslBinding {
 		Remove-Item .\0.0.0.0!443
 	}
 	$cert | New-Item 0.0.0.0!443
-	dir
-	cd C:
+	cd $curDir
 }
+
+function IsModuleAvailable {
+	param
+	(
+		[string] $Name
+	)
+	return Get-Module -ListAvailable | Where-Object { $_.name -eq $Name }
+}
+
+
+if (IsModuleAvailable -Name "ServerManager") {
+	Import-Module ServerManager
+}
+
+
+if (!(IsModuleAvailable -Name "WebAdministration")) {
+	# http://technet.microsoft.com/en-us/library/ee790599.aspx
+	#It's an prerequisites for this library, so always install if not available.
+	Add-WebServerIISToolsFeature 
+}
+
+#Required library
+Import-Module WebAdministration
+
 
 Export-ModuleMember -function * -alias *
 
