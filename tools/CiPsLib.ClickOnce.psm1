@@ -28,7 +28,7 @@ function ResignClickOnceApplication {
         $VerbosePreference = 'Continue'
     }
 	CopyAndStripFileName -Source $ApplicationFilesDirectory -Destination $TempDirectory -PartToStrip ".deploy" -Verbose
-	$MageExePath = 'C:\Program Files (x86)\Microsoft SDKs\Windows\v8.0A\bin\NETFX 4.0 Tools\mage.exe'
+	$MageExePath = GetMagePath()
 	& $MageExePath -Update $ManifestFilePath -FromDirectory $TempDirectory | Write-Verbose
 	CheckError "Failed to update $ManifestFilePath"
 	if ($CertificateFilePassword -eq "") {
@@ -58,7 +58,7 @@ function SetClickOnceInformation {
 		[string] $Processor = "",
 		[switch] $Verbose
 	)
-	$MageExePath = 'C:\Program Files (x86)\Microsoft SDKs\Windows\v8.0A\bin\NETFX 4.0 Tools\mage.exe'
+	$MageExePath = GetMagePath()
     if ($Verbose) {
         $VerbosePreference = 'Continue'
     }
@@ -105,6 +105,21 @@ function CopyAndStripFileName {
 			[System.IO.File]::WriteAllBytes($dstPath, $fileContent)
 		}
 	}
+}
+
+function GetMagePath() {
+    $VerbosePreference = 'Continue'
+
+    # .NET 4 path
+	#$MageExePath = 'C:\Program Files (x86)\Microsoft SDKs\Windows\v8.0A\bin\NETFX 4.0 Tools\mage.exe'
+
+	$MyDir = Split-Path $MyInvocation.MyCommand.Definition
+	Write-Verbose "Looking for mage.exe and starting from '$MyDir'"
+	$MageExePath = Resolve-Path $MyDir"\Tools\Mage\mage.exe"
+
+	Write-Verbose "Found mage.exe at $MageExePath"
+
+	return $MageExePath
 }
 
 Export-ModuleMember -function * -alias *
