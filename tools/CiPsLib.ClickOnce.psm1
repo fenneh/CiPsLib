@@ -28,7 +28,7 @@ function ResignClickOnceApplication {
         $VerbosePreference = 'Continue'
     }
 	CopyAndStripFileName -Source $ApplicationFilesDirectory -Destination $TempDirectory -PartToStrip ".deploy" -Verbose
-	$MageExePath = GetMagePath()
+	$MageExePath = GetMagePath
 	& $MageExePath -Update $ManifestFilePath -FromDirectory $TempDirectory | Write-Verbose
 	CheckError "Failed to update $ManifestFilePath"
 	if ($CertificateFilePassword -eq "") {
@@ -58,7 +58,7 @@ function SetClickOnceInformation {
 		[string] $Processor = "",
 		[switch] $Verbose
 	)
-	$MageExePath = GetMagePath()
+	$MageExePath = GetMagePath
     if ($Verbose) {
         $VerbosePreference = 'Continue'
     }
@@ -107,7 +107,7 @@ function CopyAndStripFileName {
 	}
 }
 
-function GetMagePath() {
+function GetMagePath {
     $VerbosePreference = 'Continue'
 
     # .NET 4 path
