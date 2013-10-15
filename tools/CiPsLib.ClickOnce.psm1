@@ -1,4 +1,5 @@
-﻿
+﻿$MyDir = Split-Path $MyInvocation.MyCommand.Definition
+
 function UpdateSetupExeUrl {
 	param
 	(
@@ -75,8 +76,8 @@ function SetClickOnceInformation {
 	if ($SupportUrl -ne "") {
 		XmlPoke $ApplicationFilePath "//*[local-name() = 'description']/@*[namespace-uri()='urn:schemas-microsoft-com:asm.v2' and local-name() = 'supportUrl']" $SupportUrl -Verbose
 	}
-	if ($Platform -ne "") {
-		& $MageExePath -Update $ApplicationFilePath -Processor $Platform
+	if ($Processor -ne "") {
+		& $MageExePath -Update $ApplicationFilePath -Processor $Processor
 	}
 }
 
@@ -109,13 +110,9 @@ function CopyAndStripFileName {
 
 function GetMagePath {
     $VerbosePreference = 'Continue'
-
-	$MyDir = Split-Path $MyInvocation.MyCommand.Definition
-	Write-Verbose "Looking for mage.exe and starting from '$MyDir'"
+	Write-Verbose "Looking for mage.exe and starting from $MyDir"
 	$MageExePath = Resolve-Path $MyDir"\Tools\Mage\mage.exe"
-
 	Write-Verbose "Found mage.exe at $MageExePath"
-
 	return $MageExePath
 }
 
