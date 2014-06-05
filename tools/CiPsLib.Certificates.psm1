@@ -1,3 +1,6 @@
+$MyDir = Split-Path $MyInvocation.MyCommand.Definition
+Import-Module $MyDir"\CiPsLib.Common.psm1" -Force
+
 # http://poshcode.org/1937
 # Examples:
 #  Import-Certificate -CertFile “VeriSign_Expires-2028.08.01.cer” -StoreNames AuthRoot, Root -LocalMachine
