@@ -23,7 +23,7 @@ function Add-WebServerIISToolsFeature {
     }
 	Write-Verbose "Adding Web Server (IIS) Tools feature"
 	if (Get-Command "Add-WindowsFeature" -ErrorAction SilentlyContinue) {
-		Add-WindowsFeature RSAT-Web-Server | Write-Host
+		   Add-WindowsFeature RSAT-Web-Server | Write-Host
 		
 	}
 
@@ -144,6 +144,38 @@ function Add-AppPool {
 	
 	cd $curDir
 }
+
+
+function StartApplicationPool {
+	param
+	(
+		[string] $AppPoolName,
+		[switch] $Verbose
+	)
+    if ($Verbose) {
+        $VerbosePreference = 'Continue'
+    }
+
+	if((Test-Path IIS:\AppPools\$appPoolName) -and (Get-WebAppPoolState $appPoolName).Value -ne 'Started')	{
+			Start-WebAppPool -Name $appPoolName
+	}
+}  
+
+
+function StopApplicationPool {
+	param
+	(
+		[string] $AppPoolName,
+		[switch] $Verbose
+	)
+    if ($Verbose) {
+        $VerbosePreference = 'Continue'
+    }
+
+	if((Test-Path IIS:\AppPools\$appPoolName) -and (Get-WebAppPoolState $appPoolName).Value -ne 'Stopped')	{
+			Stop-WebAppPool -Name $appPoolName
+	}
+}  
 
 function Add-Website {
 	param
