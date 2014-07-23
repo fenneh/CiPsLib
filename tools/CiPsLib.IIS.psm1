@@ -1,4 +1,6 @@
-﻿
+﻿$MyDir = Split-Path $MyInvocation.MyCommand.Definition
+Import-Module $MyDir"\CiPsLib.Common.psm1" -Force
+
 function EnsureWebFeaturesAreInstalled {
 	param
 	(
