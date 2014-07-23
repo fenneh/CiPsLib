@@ -6,6 +6,15 @@ Import-Module $MyDir"\CiPsLib.Common.psm1" -Force
 #  Import-Certificate -CertFile “VeriSign_Expires-2028.08.01.cer” -StoreNames AuthRoot, Root -LocalMachine
 #  Import-Certificate -CertFile “VeriSign_Expires-2018.05.18.p12” -StoreNames AuthRoot -LocalMachine -CurrentUser -CertPassword Password -Verbose
 #  dir -Path C:\Certs -Filter *.cer | Import-Certificate -CertFile $_ -StoreNames AuthRoot, Root -LocalMachine -Verbose
+# Store paths:
+#  AddressBook: The X.509 certificate store for other users.
+#  AuthRoot: The X.509 certificate store for third-party certificate authorities (CAs).
+#  CertificateAuthority: The X.509 certificate store for intermediate certificate authorities (CAs).
+#  Disallowed: The X.509 certificate store for revoked certificates.
+#  My: The X.509 certificate store for personal certificates.
+#  Root: The X.509 certificate store for trusted root certificate authorities (CAs).
+#  TrustedPeople: The X.509 certificate store for directly trusted people and resources.
+#  TrustedPublisher: The X.509 certificate store for directly trusted publishers.
 function Import-Certificate
 {
     param
