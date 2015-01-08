@@ -26,12 +26,12 @@ function Add-WebServerIISToolsFeature {
 	Write-Verbose "Adding Web Server (IIS) Tools feature"
 	if (Get-Command "Add-WindowsFeature" -ErrorAction SilentlyContinue) {
 		   Add-WindowsFeature RSAT-Web-Server | Write-Host
-		
+
 	}
 
 }
 
-	
+
 function Add-Iis6MetaDataCompatibilityFeature {
 	param
 	(
@@ -43,7 +43,7 @@ function Add-Iis6MetaDataCompatibilityFeature {
 	Write-Verbose "Adding IIS 6 Meta Data Compatability feature"
 	if (Get-Command "Add-WindowsFeature" -ErrorAction SilentlyContinue) {
 		Add-WindowsFeature Web-Metabase
-		
+
 	}
 }
 
@@ -55,7 +55,7 @@ function Register-AspNetWithIis {
     if ($Verbose) {
         $VerbosePreference = 'Continue'
     }
-	Write-Verbose "Register ASP.NET 4 with IIS"	
+	Write-Verbose "Register ASP.NET 4 with IIS"
     & "$env:windir\Microsoft.NET\Framework\v4.0.30319\aspnet_regiis.exe" -i | Write-Verbose
 	CheckError "Register ASP.NET 4 with IIS FAILED!"
 }
@@ -94,7 +94,7 @@ function Add-WebApplication {
 		Remove-WebSite -Name $SiteName
 	}
 
-	Write-Verbose "Add-WebApplication: Application $SiteName\$ApplicationName does not exist, creating" 
+	Write-Verbose "Add-WebApplication: Application $SiteName\$ApplicationName does not exist, creating"
 	New-WebApplication -Site $SiteName -Name $ApplicationName -PhysicalPath $WebRoot -ApplicationPool $AppPoolName > $null
 	Set-ItemProperty $sitePath -name applicationPool -value $appPoolName
 }
@@ -102,8 +102,8 @@ function Add-WebApplication {
 function Add-AppPool {
 	param
 	(
-		[string] $Name, 
-		[string] $FrameworkVersion, 
+		[string] $Name,
+		[string] $FrameworkVersion,
 		[string] $Identity,
 		[string] $IdentityPassword = "",
 		[switch] $Verbose
@@ -111,25 +111,25 @@ function Add-AppPool {
     if ($Verbose) {
         $VerbosePreference = 'Continue'
     }
-	
+
 	Write-Verbose "Add-AppPool: Configuring app pool $Name, with framework v$FrameworkVersion and user $Identity"
 	$curDir = get-location
 	cd IIS:\
 	$appPoolPath = ("IIS:\AppPools\" + $Name)
 	$pool = Get-Item $appPoolPath -ErrorAction SilentlyContinue
-	
+
 	if ($pool) {
 		Write-Verbose "Add-AppPool: Deleting existing appPool: $appPoolPath"
 		Remove-Item $appPoolPath -Force -Recurse
 	}
-	
-	if (!(Test-Path $appPoolPath)) { 
-		Write-Verbose "App pool $Name does not exist. Creating..." 
+
+	if (!(Test-Path $appPoolPath)) {
+		Write-Verbose "App pool $Name does not exist. Creating..."
 		$newAppPool = New-Item $appPoolPath
 		$newAppPool.processModel.idleTimeout = [TimeSpan] "0.00:00:00"
 		$newAppPool.managedRuntimeVersion = $FrameworkVersion
 	    $newAppPool.recycling.periodicRestart.time = [TimeSpan] "00:00:00"
-				
+
 		if ($IdentityPassword -ne "") {
 			Write-Verbose "Add-AppPool: Setting up App Pool with specific user $Identity"
 			$newAppPool.processModel.userName = $Identity
@@ -138,12 +138,12 @@ function Add-AppPool {
 		} else {
 			$newAppPool.processModel.identityType = $Identity
 		}
-	
-		$newAppPool | Set-Item  	
+
+		$newAppPool | Set-Item
 	} else {
 		throw "Add-AppPool: App pool '$appPoolPath' still exist, but it should not!"
 	}
-	
+
 	cd $curDir
 }
 
@@ -161,7 +161,7 @@ function StartApplicationPool {
 	if((Test-Path IIS:\AppPools\$appPoolName) -and (Get-WebAppPoolState $appPoolName).Value -ne 'Started')	{
 			Start-WebAppPool -Name $appPoolName
 	}
-}  
+}
 
 
 function StopApplicationPool {
@@ -177,13 +177,13 @@ function StopApplicationPool {
 	if((Test-Path IIS:\AppPools\$appPoolName) -and (Get-WebAppPoolState $appPoolName).Value -ne 'Stopped')	{
 			Stop-WebAppPool -Name $appPoolName
 	}
-}  
+}
 
 function Add-Website {
 	param
 	(
-		[string] $SiteName, 
-		[string] $AppPoolName, 
+		[string] $SiteName,
+		[string] $AppPoolName,
 		[string] $WebRoot,
 		[string] $HostHeader,
 		[switch] $Verbose
@@ -191,21 +191,21 @@ function Add-Website {
     if ($Verbose) {
         $VerbosePreference = 'Continue'
     }
-	
+
 	# Delete exiting website
 	$sitePath = ("IIS:\Sites\" + $SiteName)
-	$site = Get-Item $sitePath -ErrorAction SilentlyContinue 
+	$site = Get-Item $sitePath -ErrorAction SilentlyContinue
 	if ($site) {
 		Write-Verbose "Add-Website: Site with name '$SiteName' already exist, REMOVING it!"
 		Remove-WebSite -Name $SiteName
 	}
-	
+
 	Write-Verbose "Add-Website: Checking site $SiteName again"
 	$site = Get-Item $SiteName -ErrorAction SilentlyContinue
-	
-	if (!$site) { 
-		Write-Verbose "Add-Website: Site $SiteName does not exist, creating..." 
-		$siteBindings = ":80:" + $HostHeader   
+
+	if (!$site) {
+		Write-Verbose "Add-Website: Site $SiteName does not exist, creating..."
+		$siteBindings = ":80:" + $HostHeader
 		$id = (dir iis:\sites | foreach {$_.id} | sort -Descending | select -first 1) + 1
 		New-Item $sitePath -Bindings @{protocol="http";bindingInformation=$siteBindings} -id $id -PhysicalPath $WebRoot
 		# Write-Host "Set bindings..."
@@ -215,7 +215,7 @@ function Add-Website {
 	} else {
 		throw "Add-Website: Site '$sitePath' still exists, but it should not!"
 	}
-}	
+}
 
 # Get-ChildItem -Recurse cert:\ | more
 function Add-SslBinding {
@@ -230,16 +230,16 @@ function Add-SslBinding {
     if ($Verbose) {
         $VerbosePreference = 'Continue'
     }
-	
+
 	$curDir = get-location
 	cd IIS:
-	$binding = Get-WebBinding -Name $SiteName -Port 443
-	
+	$binding = Get-WebBinding -Name $SiteName -Port 443 -HostHeader $Hostheader
+
 	if ($binding) {
 		Write-Verbose "Add-SslBinding: Binding exists - removing existing"
 	    $binding | Remove-WebBinding
 	}
-	
+
 	New-WebBinding -Name $siteName -IP "*" -Port 443 -Protocol https
 	$cert = Get-Item "cert:\LocalMachine\$CertificateStore\$SslThumbPrint"
 	Write-Verbose "Certificate"
@@ -271,7 +271,7 @@ if (IsModuleAvailable -Name "ServerManager") {
 if (!(IsModuleAvailable -Name "WebAdministration")) {
 	# http://technet.microsoft.com/en-us/library/ee790599.aspx
 	#It's an prerequisites for this library, so always install if not available.
-	Add-WebServerIISToolsFeature 
+	Add-WebServerIISToolsFeature
 }
 
 #Required library
